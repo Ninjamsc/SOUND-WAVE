@@ -17,7 +17,33 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(
+      circle at 10% 20%,
+      rgba(255, 106, 0, 0.164) 0%,
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 100% 60%,
+      rgba(116, 53, 8, 0.308) 0%,
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 20% 100%,
+      rgba(116, 53, 8, 0.308) 0%,
+      transparent 20%
+    ),
+    linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+.via-black {
+  --tw-gradient-via: #130a0a;
+  --tw-gradient-via-stops: var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-via) var(--tw-gradient-via-position), var(--tw-gradient-to) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-via-stops);
+}
+
+.min-h-screen {
+  min-height: 20vh;
 }
