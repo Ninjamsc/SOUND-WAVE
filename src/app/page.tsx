@@ -29,8 +29,17 @@ export default function Home() {
 
       // The image should be at 60deg when not in view (when progress is -1 or 1)
       // The image should be at 0deg when in the center (when progress is 0)
-      // So we use progress to interpolate between 60deg and 0deg
-      const rotationX = 60 * Math.abs(progress);
+      // Only apply rotation when the center of the image is below the center of the viewport
+      // When the image center is above the viewport center, keep rotation at 0 degrees
+      let rotationX = 0;
+      if (elementCenter >= 0) {
+        // Image center is below or at viewport center - apply rotation
+        // Calculate rotation based on how far the image center is below viewport center
+        rotationX = 60 * Math.abs(progress);
+      } else {
+        // Image center is above viewport center - keep rotation at 0 degrees
+        rotationX = 0;
+      }
 
       // Apply the rotation to the image
       const img = imageContainer.querySelector('img');
@@ -42,13 +51,30 @@ export default function Home() {
     // Add scroll event listener
     window.addEventListener('scroll', handleScroll);
 
-    // Set initial rotation to 60deg before the scroll event starts
-    // (image starts tilted when not in view)
+    // Set initial rotation based on position before the scroll event starts
+    // If the image is in view (center above viewport center), start with 0deg
+    // If the image is not in view (center below viewport center), start with 60deg
     const imageContainer = document.getElementById('scroll-image-container');
     if (imageContainer) {
+      const rect = imageContainer.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const elementTop = rect.top;
+      const elementCenter = elementTop - windowHeight / 2 + rect.height / 2;
+
+      let rotationX = 0;
+      if (elementCenter >= 0) {
+        // Image center is below or at viewport center - start with rotation
+        const initialProgress = -elementCenter / (windowHeight / 2);
+        const clampedProgress = Math.max(-1, Math.min(1, initialProgress));
+        rotationX = 60 * Math.abs(clampedProgress);
+      } else {
+        // Image center is above viewport center - start with 0 degrees
+        rotationX = 0;
+      }
+
       const img = imageContainer.querySelector('img');
       if (img) {
-        img.style.transform = 'rotateX(60deg)';
+        img.style.transform = `rotateX(${rotationX}deg)`;
         img.style.transformStyle = 'preserve-3d';
       }
     }
@@ -117,7 +143,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center py-10">
         <div
           id="scroll-image-container"
-          className="w-full max-w-[1200px] px-4 rounded-2xl overflow-hidden"
+          className="w-full max-w-[1200px] px-4 rounded-2xl"
           style={{
             perspective: '1000px',
           }}>
