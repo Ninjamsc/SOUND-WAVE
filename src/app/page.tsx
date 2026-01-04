@@ -1,9 +1,11 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Home() {
+  const splineContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleScroll = () => {
       const imageContainer = document.getElementById('scroll-image-container');
@@ -88,6 +90,39 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    // Initialize Spline viewer after component mounts
+    const initializeSplineViewer = async () => {
+      if (splineContainerRef.current && typeof window !== 'undefined') {
+        // Wait a bit to ensure the script is loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Check if the Spline viewer custom element is available
+        if (typeof customElements !== 'undefined') {
+          // Wait for the custom element to be defined
+          if (!customElements.get('spline-viewer')) {
+            await customElements.whenDefined('spline-viewer');
+          }
+        }
+
+        // Create the spline-viewer element
+        const splineViewer = document.createElement('spline-viewer');
+        splineViewer.setAttribute(
+          'url',
+          'https://prod.spline.design/BAzjbMem6oOITmTR/scene.splinecode'
+        );
+        splineViewer.setAttribute('loading-anim', '');
+        splineViewer.setAttribute('events-target', 'global');
+
+        // Clear the container and add the viewer
+        splineContainerRef.current.innerHTML = '';
+        splineContainerRef.current.appendChild(splineViewer);
+      }
+    };
+
+    initializeSplineViewer();
+  }, []);
+
   return (
     <div className="min-h-screen mt-20">
       {/* First screen: Title, subtitle, and button only */}
@@ -109,6 +144,13 @@ export default function Home() {
             Начать слушать за 1 минуту - без карты
           </p>
         </main>
+      </div>
+
+      {/* Spline 3D Scene - placed after the initial text section */}
+      <div
+        ref={splineContainerRef}
+        className="min-h-screen flex items-center justify-center py-10">
+        {/* The Spline viewer will be dynamically added here */}
       </div>
 
       {/* Second screen: Grid components only */}
