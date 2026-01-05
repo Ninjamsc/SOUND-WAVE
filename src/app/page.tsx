@@ -5,6 +5,50 @@ import { useEffect, useRef, useState } from 'react';
 
 export default function Home() {
   const splineContainerRef = useRef<HTMLDivElement>(null);
+  const [openAccordionIndex, setOpenAccordionIndex] = useState<number | null>(
+    null
+  );
+  const [isPlaying, setIsPlaying] = useState<boolean>(false); // Initially paused until user interaction
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const toggleAccordion = (index: number) => {
+    setOpenAccordionIndex(openAccordionIndex === index ? null : index);
+  };
+
+  const togglePlayPause = async () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      // Pause playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsPlaying(false);
+    } else {
+      // Start playback - create AudioContext on user interaction
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (
+          window.AudioContext || (window as any).webkitAudioContext
+        )();
+      }
+
+      try {
+        // Resume AudioContext if suspended
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+
+        // Play the audio element
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (error: any) {
+        console.error('Audio play error:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -125,10 +169,65 @@ export default function Home() {
 
   return (
     <div className="min-h-screen mt-20">
+      {/* Transparent header with semi-transparent SOUND-WAVE icon on the right and play/pause button */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent py-4 px-6 flex justify-between items-center">
+        <button
+          onClick={togglePlayPause}
+          className="text-orange-500 hover:text-orange-400 focus:outline-none mr-4">
+          {isPlaying ? (
+            // Pause icon (two vertical lines)
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-9 w-9"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 9v6m4-6v6M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          ) : (
+            // Play icon (triangle)
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-9 w-9"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          )}
+        </button>
+        <div className="text-orange-500 font-bold text-xl tracking-wider opacity-50">
+          SOUND-WAVE
+        </div>
+      </header>
+
+      {/* Audio element for the stream */}
+      <audio
+        ref={audioRef}
+        src="https://hls-01-radiorecord.hostingradio.ru/record/112/playlist.m3u8"
+        style={{ display: 'none' }}
+      />
+
       {/* First screen: Title, subtitle, and button only */}
       <div className="min-h-screen flex items-center justify-center">
         <main className="flex flex-col items-center justify-center w-full max-w-5xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight text-center">
             <span className="block">Твоя музыка. Твой мир.</span>
             <span className="block mt-2">Без компромиссов.</span>
           </h1>
@@ -136,11 +235,11 @@ export default function Home() {
             Открой для себя 100 миллионов треков в lossless-качестве,
             эксклюзивные произведения, мгновенное соединение
           </p>
-          <button className="bg-orange-500 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-full flex items-center gap-2 transition-all duration-300 transform hover:scale-105 mb-4 cursor-pointer">
+          <button className="bg-orange-500 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-full flex items-center gap-2 transition-all duration-300 transform hover:scale-105 mb-2 cursor-pointer">
             ПОЛУЧИТЬ 3 МЕСЯЦА БЕСПЛАТНО
             <ArrowRight size={20} />
           </button>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-sm text-gray-400 mt-1">
             Начать слушать за 1 минуту - без карты
           </p>
         </main>
@@ -149,7 +248,7 @@ export default function Home() {
       {/* Spline 3D Scene - placed after the initial text section */}
       <div
         ref={splineContainerRef}
-        className="min-h-screen flex items-center justify-center py-10">
+        className="min-h-screen flex items-center justify-center py-3">
         {/* The Spline viewer will be dynamically added here */}
       </div>
 
@@ -197,10 +296,128 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Fourth screen: Detailed offer section */}
+      {/* Fourth screen: Our Advantages */}
+      <div className="min-h-screen flex items-center justify-center py-10">
+        <div className="w-full max-w-4xl mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-12">
+            Наши преимущества
+          </h2>
+          <div className="space-y-4 max-w-[2600px] mx-auto">
+            {' '}
+            {/* Increased width by 30% from 2000px to 2600px */}
+            {/* Accordion Item 1 */}
+            <div className="bg-gradient-to-br from-gray-950 via-black to-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 cursor-pointer">
+              <button
+                className="w-full p-6 text-left flex justify-between items-center accordion-trigger"
+                onClick={() => toggleAccordion(0)}>
+                <span className="text-lg font-semibold text-orange-500">
+                  Lossless-качество
+                </span>
+                <span className="text-orange-500 text-xl font-bold">
+                  {openAccordionIndex === 0 ? '▲' : '▼'}
+                </span>
+              </button>
+              {openAccordionIndex === 0 && (
+                <div className="accordion-content p-6 pt-0">
+                  <p className="text-gray-300">
+                    Ощути каждую ноту. Звук, который полностью передаёт эмоции и
+                    атмосферу.
+                  </p>
+                </div>
+              )}
+            </div>
+            {/* Accordion Item 2 */}
+            <div className="bg-gradient-to-br from-gray-950 via-black to-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 cursor-pointer">
+              <button
+                className="w-full p-6 text-left flex justify-between items-center accordion-trigger"
+                onClick={() => toggleAccordion(1)}>
+                <span className="text-lg font-semibold text-orange-500">
+                  Без рекламы
+                </span>
+                <span className="text-orange-500 text-xl font-bold">
+                  {openAccordionIndex === 1 ? '▲' : '▼'}
+                </span>
+              </button>
+              {openAccordionIndex === 1 && (
+                <div className="accordion-content p-6 pt-0">
+                  <p className="text-gray-300">
+                    Слушай любимые треки без перерыва. Никаких отвлекающих
+                    факторов, только чистый звук.
+                  </p>
+                </div>
+              )}
+            </div>
+            {/* Accordion Item 3 */}
+            <div className="bg-gradient-to-br from-gray-950 via-black to-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 cursor-pointer">
+              <button
+                className="w-full p-6 text-left flex justify-between items-center accordion-trigger"
+                onClick={() => toggleAccordion(2)}>
+                <span className="text-lg font-semibold text-orange-500">
+                  Эксклюзивные материалы
+                </span>
+                <span className="text-orange-500 text-xl font-bold">
+                  {openAccordionIndex === 2 ? '▲' : '▼'}
+                </span>
+              </button>
+              {openAccordionIndex === 2 && (
+                <div className="accordion-content p-6 pt-0">
+                  <p className="text-gray-300">
+                    Только у нас ты найдёшь редкие альбомы и записи, которые не
+                    найдёшь нигде.
+                  </p>
+                </div>
+              )}
+            </div>
+            {/* Accordion Item 4 */}
+            <div className="bg-gradient-to-br from-gray-950 via-black to-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 cursor-pointer">
+              <button
+                className="w-full p-6 text-left flex justify-between items-center accordion-trigger"
+                onClick={() => toggleAccordion(3)}>
+                <span className="text-lg font-semibold text-orange-500">
+                  Персонализированные рекомендации
+                </span>
+                <span className="text-orange-500 text-xl font-bold">
+                  {openAccordionIndex === 3 ? '▲' : '▼'}
+                </span>
+              </button>
+              {openAccordionIndex === 3 && (
+                <div className="accordion-content p-6 pt-0">
+                  <p className="text-gray-300">
+                    Каждый день — новые открытия. Алгоритм, который учитывает
+                    твои предпочтения.
+                  </p>
+                </div>
+              )}
+            </div>
+            {/* Accordion Item 5 */}
+            <div className="bg-gradient-to-br from-gray-950 via-black to-gray-900 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/20 hover:scale-105 cursor-pointer">
+              <button
+                className="w-full p-6 text-left flex justify-between items-center accordion-trigger"
+                onClick={() => toggleAccordion(4)}>
+                <span className="text-lg font-semibold text-orange-500">
+                  Удобный интерфейс
+                </span>
+                <span className="text-orange-500 text-xl font-bold">
+                  {openAccordionIndex === 4 ? '▲' : '▼'}
+                </span>
+              </button>
+              {openAccordionIndex === 4 && (
+                <div className="accordion-content p-6 pt-0">
+                  <p className="text-gray-300">
+                    Легкость навигации и быстрый поиск — всё для твоего
+                    комфорта.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fifth screen: Detailed offer section */}
       <div className="min-h-screen flex items-center justify-center py-10">
         <div className="w-full max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-12">
             Детальное предложение
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -235,6 +452,41 @@ export default function Home() {
               </h3>
               <p className="text-white">Специальные привилегии</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer with more transparent orange divider */}
+      <div className="w-full border-t border-orange-800 border-opacity-100 mt-10"></div>
+      <div className="w-full py-6 bg-opacity-50">
+        <div className="max-w-7xl mx-auto px-4 flex justify-end">
+          <div className="text-right">
+            <p className="text-gray-400 mb-2">
+              2026 (c). Built by
+              <button
+                className="text-orange-500 font-bold underline hover:text-orange-400 cursor-pointer ml-1"
+                onClick={() =>
+                  window.open(
+                    'https://ecommerce-seliger-studio-upstarter.netlify.app/',
+                    '_blank'
+                  )
+                }>
+                SELIGER.STUDIO
+              </button>
+            </p>
+            <p className="text-gray-400 mb-4">
+              Powered by
+              <button
+                className="text-orange-500 font-bold underline hover:text-orange-400 cursor-pointer ml-1"
+                onClick={() =>
+                  window.open(
+                    'https://ecommerce-seliger-studio-upstarter.netlify.app/',
+                    '_blank'
+                  )
+                }>
+                SELIGER.STUDIO
+              </button>
+            </p>
           </div>
         </div>
       </div>
