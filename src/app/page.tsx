@@ -9,6 +9,7 @@ export default function Home() {
     null
   );
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // Initially paused until user interaction
+  const [volume, setVolume] = useState<number>(1); // Volume state (0 to 1)
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -47,6 +48,16 @@ export default function Home() {
         console.error('Audio play error:', error);
         setIsPlaying(false);
       }
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+
+    // Update the audio element's volume
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
     }
   };
 
@@ -171,50 +182,62 @@ export default function Home() {
     <div className="min-h-screen mt-20">
       {/* Transparent header with semi-transparent SOUND-WAVE icon on the right and play/pause button */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-transparent py-4 px-6 flex justify-between items-center">
-        <button
-          onClick={togglePlayPause}
-          className="text-orange-500 hover:text-orange-400 focus:outline-none mr-4">
-          {isPlaying ? (
-            // Pause icon (two vertical lines)
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-9 w-9"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 9v6m4-6v6M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          ) : (
-            // Play icon (triangle)
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-9 w-9"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          )}
-        </button>
-        <div className="text-orange-500 font-bold text-xl tracking-wider opacity-50">
-          SOUND-WAVE
+        <div className="flex flex-col items-center relative">
+          <button
+            onClick={togglePlayPause}
+            className="text-orange-500 hover:text-orange-400 focus:outline-none mb-2 btn-transparent cursor-pointer">
+            {isPlaying ? (
+              // Pause icon (two vertical lines)
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-9 w-9"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 9v6m4-6v6M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            ) : (
+              // Play icon (triangle)
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-9 w-9"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+          </button>
+          {/* Volume slider container - visible on hover */}
+          <div className="volume-slider-container cursor-pointer">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={handleVolumeChange}
+              className="volume-slider-vertical accent-orange-500 slider-transparent"
+            />
+          </div>
         </div>
+        <div className="sound-wave-text">SOUND-WAVE</div>
       </header>
 
       {/* Audio element for the stream */}
@@ -457,10 +480,10 @@ export default function Home() {
       </div>
 
       {/* Footer with more transparent orange divider */}
-      <div className="w-full border-t border-orange-800 border-opacity-100 mt-10"></div>
-      <div className="w-full py-6 bg-opacity-50">
+      <div className="w-full border-t footer-divider mt-10"></div>
+      <div className="w-full py-6 footer-container">
         <div className="max-w-7xl mx-auto px-4 flex justify-end">
-          <div className="text-right">
+          <div className="footer-text">
             <p className="text-gray-400 mb-2">
               2026 (c). Built by
               <button
