@@ -9,7 +9,7 @@ export default function Home() {
     null
   );
   const [isPlaying, setIsPlaying] = useState<boolean>(false); // Initially paused until user interaction
-  const [volume, setVolume] = useState<number>(1); // Volume state (0 to 1)
+  const [volume, setVolume] = useState<number>(0.15); // Volume state (0 to 1), starting at 15% volume
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -46,7 +46,14 @@ export default function Home() {
         setIsPlaying(true);
       } catch (error: any) {
         console.error('Audio play error:', error);
-        setIsPlaying(false);
+        // If Web Audio API fails, try to play directly without it for HLS streams
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch (fallbackError) {
+          console.error('Fallback play error:', fallbackError);
+          setIsPlaying(false);
+        }
       }
     }
   };
@@ -178,6 +185,62 @@ export default function Home() {
     initializeSplineViewer();
   }, []);
 
+  // Set initial volume when component mounts
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.15; // Set initial volume to 15%
+    }
+  }, []);
+
+  // Add mouse movement functionality to start audio on first interaction
+  useEffect(() => {
+    const handleFirstMouseMove = async () => {
+      if (!audioRef.current) return;
+
+      // Remove the mouse move listener since we only want this to happen once
+      window.removeEventListener('mousemove', handleFirstMouseMove);
+
+      // Start playback automatically
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (
+          window.AudioContext || (window as any).webkitAudioContext
+        )();
+      }
+
+      try {
+        // Resume AudioContext if suspended
+        if (
+          audioContextRef.current &&
+          audioContextRef.current.state === 'suspended'
+        ) {
+          await audioContextRef.current.resume();
+        }
+
+        // Play the audio element
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (error: any) {
+        console.error('Audio play error on mouse move:', error);
+        // If Web Audio API fails, try to play directly without it for HLS streams
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch (fallbackError) {
+          console.error('Fallback play error on mouse move:', fallbackError);
+          setIsPlaying(false);
+        }
+      }
+    };
+
+    // Add mouse move event listener to trigger audio on first mouse movement
+    window.addEventListener('mousemove', handleFirstMouseMove);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      window.removeEventListener('mousemove', handleFirstMouseMove);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen mt-20">
       {/* Transparent header with semi-transparent SOUND-WAVE icon on the right and play/pause button */}
@@ -245,6 +308,7 @@ export default function Home() {
         ref={audioRef}
         src="https://hls-01-radiorecord.hostingradio.ru/record/112/playlist.m3u8"
         style={{ display: 'none' }}
+        crossOrigin="anonymous"
       />
 
       {/* First screen: Title, subtitle, and button only */}
